@@ -1,5 +1,41 @@
 @echo off
 setlocal EnableDelayedExpansion
+
+:: --- تنظیمات ---
+set "CURRENT_VERSION=0.1"
+set "VERSION_URL=https://raw.githubusercontent.com/USERNAME/REPO/main/version.txt"
+set "SCRIPT_URL=https://raw.githubusercontent.com/USERNAME/REPO/main/dns_changer.bat"
+set "TEMP_DIR=%temp%\dns_changer_update"
+:: ----------------
+
+echo Checking for updates...
+if not exist "%TEMP_DIR%" mkdir "%TEMP_DIR%"
+
+:: بررسی اتصال و دانلود نسخه جدید با timeout (45 ثانیه)
+powershell -Command "$wc = New-Object System.Net.WebClient; $wc.DownloadFile('%VERSION_URL%', '%TEMP_DIR%\online_version.txt')" >nul 2>&1
+
+if exist "%TEMP_DIR%\online_version.txt" (
+    set /p ONLINE_VERSION=<"%TEMP_DIR%\online_version.txt"
+    
+    if "!CURRENT_VERSION!"=="!ONLINE_VERSION!" (
+        echo You are up to date.
+        timeout /t 2 >nul
+    ) else (
+        echo New version detected: !ONLINE_VERSION!
+        echo Downloading update...
+        powershell -Command "$wc = New-Object System.Net.WebClient; $wc.DownloadFile('%SCRIPT_URL%', '%~dp0dns_changer_new.bat')"
+        
+        echo.
+        echo Update completed!
+        echo Please restart the script.
+        pause
+        exit
+    )
+) else (
+    echo Could not check for updates. Running current version...
+    timeout /t 2 >nul
+)
+
 cd /d "%~dp0"
 
 :: دریافت دقیق‌تر DNS فعلی
